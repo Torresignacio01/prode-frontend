@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>⚽ Prode Mundial 2026</title>
+
+  <style>
+
+    body{
+      font-family: Arial, sans-serif;
+      background:#f3f4f6;
+      margin:20px;
+    }
+
+    h1{
+      text-align:center;
+      margin-bottom:30px;
+      color:#111827;
+    }
+
+    #partidos{
+      max-width:900px;
+      margin:auto;
+    }
+
+    .partido{
+      background:white;
+      border-radius:14px;
+      padding:18px;
+      margin-bottom:18px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .liga{
+      text-align:center;
+      color:#6b7280;
+      margin-bottom:14px;
+      font-size:14px;
+    }
+
+    .equipos{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .equipo{
+      width:35%;
+      font-size:20px;
+      font-weight:bold;
+    }
+
+    .local{
+      text-align:right;
+    }
+
+    .visitante{
+      text-align:left;
+    }
+
+    .score{
+      width:30%;
+      text-align:center;
+      font-size:34px;
+      font-weight:bold;
+      color:#111827;
+    }
+
+    .estado{
+      margin-top:12px;
+      text-align:center;
+      color:#2563eb;
+      font-weight:bold;
+      font-size:18px;
+    }
+
+    .error{
+      text-align:center;
+      color:red;
+      font-size:18px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <h1>⚽ Partidos en Vivo</h1>
+
+  <div id="partidos">
+    Cargando partidos...
+  </div>
+
+  <script>
+
+    async function cargarPartidos(){
+
+      const contenedor =
+        document.getElementById("partidos");
+
+      try{
+
+        const response = await fetch(
+          "http://localhost:3000/api/partidos"
+        );
+
+        const data = await response.json();
+
+        console.log(data);
+
+        if(!data.events){
+
+          contenedor.innerHTML = `
+            <div class="error">
+              No hay partidos disponibles
+            </div>
+          `;
+
+          return;
+        }
+
+        contenedor.innerHTML =
+          data.events.map(partido => {
+
+            if(
+              !partido.competitions ||
+              !partido.competitions[0]
+            ){
+              return "";
+            }
+
+            const competencia =
+              partido.competitions[0];
+
+            const local =
+              competencia.competitors.find(
+                e => e.homeAway === "home"
+              );
+
+            const visitante =
+              competencia.competitors.find(
+                e => e.homeAway === "away"
+              );
+
+            if(!local || !visitante){
+              return "";
+            }
+
+            return `
+
+              <div class="partido">
+
+                <div class="liga">
+                  ${partido.leagues?.[0]?.name || "Liga"}
+                </div>
+
+                <div class="equipos">
+
+                  <div class="equipo local">
+                    ${local.team?.displayName || "Local"}
+                  </div>
+
+                  <div class="score">
+                    ${local.score || 0}
+                    -
+                    ${visitante.score || 0}
+                  </div>
+
+                  <div class="equipo visitante">
+                    ${visitante.team?.displayName || "Visitante"}
+                  </div>
+
+                </div>
+
+                <div class="estado">
+                  ${competencia.status?.type?.detail || ""}
+                </div>
+
+              </div>
+
+            `;
+
+          }).join("");
+
+      }catch(error){
+
+        console.error(error);
+
+        contenedor.innerHTML = `
+          <div class="error">
+            Error al cargar partidos
+          </div>
+        `;
+
+      }
+
+    }
+
+    cargarPartidos();
+
+    setInterval(cargarPartidos,15000);
+
+  </script>
+
+</body>
+</html>
